@@ -1,0 +1,26 @@
+#!/bin/bash
+
+indent() {
+  sed -u 's/^/       /'
+}
+
+readonly BUILD_DIR=${1:-}
+readonly CACHE_DIR=${2:-}
+
+readonly URL="https://github.com/github/hub/releases/download/v2.3.0-pre10/hub-linux-amd64-2.3.0-pre10.tgz"
+
+echo "-----> Download hub"
+
+result=$(curl "$URL" -L --silent --fail --retry 5 --retry-max-time 15 -o "$CACHE_DIR"/hub.tgz --write-out "%{http_code}")
+
+if [ "$result" != "200" ]; then
+  (echo "Unable to download hub: $result" | indent) && false
+fi
+
+echo "-----> Install hub"
+
+result=$(tar -xzvf "$CACHE_DIR"/hub.tgz -C "$BUILD_DIR" --strip=1 --wildcards '*/bin/hub' | indent)
+
+if [ "${PIPESTATUS[*]}" -ne 0 ]; then
+  (echo "Unable to install hub" | indent) && false
+fi
